@@ -147,6 +147,13 @@ export default function ReportForm() {
 
   return (
     <div style={{ maxWidth: 680, margin: '2rem auto', padding: '0 1rem' }}>
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="back-link"
+      >
+        ← กลับ
+      </button>
       {error && (
         <div style={{
           background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c',
