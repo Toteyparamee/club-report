@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api' });
+const api = axios.create({ baseURL: 'https://clubreport.parameedev.online/api' });
 
 export const getSubjectGroups = () => api.get('/subject-groups').then(r => r.data);
 export const createSubjectGroup = (name) => api.post('/subject-groups', { name }).then(r => r.data);
