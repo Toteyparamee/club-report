@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTeachers, getSubjectGroupsFromTeachers, getClubNames, createReport } from '../api';
 
-const GRADE_LEVELS = ['ม.1','ม.2','ม.3','ม.4','ม.5','ม.6','ม.1-3','ม.4-6','ม.1-6'];
+const GRADE_LEVELS = ['ม.ต้น','ม.ปลาย','รวม'];
 
 function ChipGroup({ options, value, onChange, getLabel, getValue }) {
   return (
