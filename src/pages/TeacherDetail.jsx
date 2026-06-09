@@ -82,7 +82,7 @@ export default function TeacherDetail() {
                         {r.evidenceFiles.map(f => (
                           <a
                             key={f.id}
-                            href={`/uploads/${f.filePath}`}
+                            href={`https://clubreport.parameedev.online/uploads/${f.filePath}`}
                             target="_blank"
                             rel="noreferrer"
                             style={{ color: '#1a56db', fontSize: '0.82rem', textDecoration: 'underline' }}

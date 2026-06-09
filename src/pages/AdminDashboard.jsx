@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTeachers, createTeacher, deleteTeacher } from '../api';
+import { getTeachers, createTeacher, deleteTeacher, getNotifyEnabled, setNotifyEnabled } from '../api';
 
 const SUBJECT_GROUPS = [
   'ภาษาไทย','คณิตศาสตร์','วิทยาศาสตร์','สังคมศึกษาฯ',
@@ -19,6 +19,17 @@ export default function AdminDashboard() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [notifyEnabled, setNotifyEnabledState] = useState(true);
+
+  useEffect(() => {
+    getNotifyEnabled().then(d => setNotifyEnabledState(d.enabled)).catch(() => {});
+  }, []);
+
+  const handleToggleNotify = async () => {
+    const next = !notifyEnabled;
+    setNotifyEnabledState(next);
+    await setNotifyEnabled(next).catch(() => setNotifyEnabledState(!next));
+  };
 
   const loadTeachers = (group) => {
     setLoading(true);
@@ -68,12 +79,31 @@ export default function AdminDashboard() {
     <div className="page">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h1 className="page-title" style={{ margin: 0 }}>ระบบหลังบ้าน — รายงานการสอนชุมนุม</h1>
-        <button
-          className="btn btn-primary"
-          onClick={() => { setShowAdd(true); setFormError(''); }}
-        >
-          + เพิ่มครู
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: notifyEnabled ? '#f0fdf4' : '#fef2f2', border: `1.5px solid ${notifyEnabled ? '#86efac' : '#fca5a5'}`, borderRadius: '10px', padding: '0.45rem 0.85rem' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: notifyEnabled ? '#16a34a' : '#dc2626' }}>
+              แจ้งเตือน Line {notifyEnabled ? 'เปิดอยู่' : 'ปิดอยู่'}
+            </span>
+            <button
+              onClick={handleToggleNotify}
+              style={{
+                width: '42px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                background: notifyEnabled ? '#22c55e' : '#d1d5db', position: 'relative', transition: 'background 0.2s',
+              }}
+            >
+              <span style={{
+                position: 'absolute', top: '3px', left: notifyEnabled ? '21px' : '3px',
+                width: '18px', height: '18px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s',
+              }} />
+            </button>
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={() => { setShowAdd(true); setFormError(''); }}
+          >
+            + เพิ่มครู
+          </button>
+        </div>
       </div>
 
       {/* Modal เพิ่มครู */}

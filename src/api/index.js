@@ -25,3 +25,6 @@ export const createReport = (formData) =>
 export const updateReport = (id, formData) =>
   api.put(`/reports/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
 export const deleteReport = (id) => api.delete(`/reports/${id}`).then(r => r.data);
+
+export const getNotifyEnabled = () => api.get('/settings/notify-enabled').then(r => r.data);
+export const setNotifyEnabled = (enabled) => api.post('/settings/notify-enabled', { enabled }).then(r => r.data);
