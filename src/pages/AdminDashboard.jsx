@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTeachers, createTeacher, deleteTeacher, getNotifyEnabled, setNotifyEnabled } from '../api';
+import { getTeachers, createTeacher, deleteTeacher, getNotifyEnabled, setNotifyEnabled, getReports, deleteReport } from '../api';
 
 const SUBJECT_GROUPS = [
   'ภาษาไทย','คณิตศาสตร์','วิทยาศาสตร์','สังคมศึกษาฯ',
@@ -21,6 +21,11 @@ export default function AdminDashboard() {
   const [formError, setFormError] = useState('');
   const [notifyEnabled, setNotifyEnabledState] = useState(true);
 
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [filterGroup, setFilterGroup] = useState('');
+  const [filterDate, setFilterDate] = useState('');
+
   useEffect(() => {
     getNotifyEnabled().then(d => setNotifyEnabledState(d.enabled)).catch(() => {});
   }, []);
@@ -40,6 +45,29 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => { loadTeachers(selectedGroup); }, [selectedGroup]);
+
+  const loadReports = (group, date) => {
+    setReportsLoading(true);
+    const params = {};
+    if (group) params.subjectGroup = group;
+    if (date) params.activityDate = date;
+    getReports(params)
+      .then(setReports)
+      .catch(() => {})
+      .finally(() => setReportsLoading(false));
+  };
+
+  useEffect(() => { loadReports(filterGroup, filterDate); }, [filterGroup, filterDate]);
+
+  const handleDeleteReport = async (id) => {
+    if (!confirm('ยืนยันการลบรายงานนี้?')) return;
+    try {
+      await deleteReport(id);
+      loadReports(filterGroup, filterDate);
+    } catch {
+      alert('ลบไม่สำเร็จ');
+    }
+  };
 
   const setField = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -192,6 +220,104 @@ export default function AdminDashboard() {
           ))}
         </div>
       )}
+
+      {/* ตารางการกรอกล่าสุด */}
+      <div style={{ marginTop: '2.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>การกรอกล่าสุด</h2>
+          <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <select
+              value={filterGroup}
+              onChange={e => setFilterGroup(e.target.value)}
+              style={{ padding: '0.5rem 0.85rem', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '0.88rem', fontFamily: 'inherit', background: '#f8fafc', color: '#1e293b' }}
+            >
+              <option value="">— กลุ่มสาระทั้งหมด —</option>
+              {SUBJECT_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={e => setFilterDate(e.target.value)}
+              style={{ padding: '0.5rem 0.85rem', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '0.88rem', fontFamily: 'inherit', background: '#f8fafc', color: '#1e293b' }}
+            />
+            {(filterGroup || filterDate) && (
+              <button
+                onClick={() => { setFilterGroup(''); setFilterDate(''); }}
+                style={{ padding: '0.5rem 0.85rem', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '0.85rem', fontFamily: 'inherit', background: '#fff', color: '#64748b', cursor: 'pointer' }}
+              >
+                ล้างตัวกรอง
+              </button>
+            )}
+            <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>{reports.length} รายการ</span>
+          </div>
+        </div>
+
+        {reportsLoading ? (
+          <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>กำลังโหลด...</p>
+        ) : reports.length === 0 ? (
+          <div className="empty-state"><p>ไม่พบรายงาน</p></div>
+        ) : (
+          <div className="table-wrap card" style={{ padding: '0.5rem' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>ครูผู้สอน</th>
+                  <th>ชุมนุม</th>
+                  <th>กลุ่มสาระ</th>
+                  <th>ระดับชั้น</th>
+                  <th>วันที่จัดกิจกรรม</th>
+                  <th>นักเรียนทั้งหมด</th>
+                  <th>ขาดเรียน</th>
+                  <th>หลักฐาน</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.map((r, i) => (
+                  <tr key={r.id}>
+                    <td>{i + 1}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{r.teacher?.prefix}{r.teacher?.firstName} {r.teacher?.lastName}</td>
+                    <td>{r.teacher?.clubName}</td>
+                    <td><span className="badge badge-blue">{r.teacher?.subjectGroup}</span></td>
+                    <td><span className="badge badge-green">{r.gradeLevel}</span></td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{new Date(r.activityDate).toLocaleDateString('th-TH')}</td>
+                    <td>{r.totalStudents}</td>
+                    <td>{r.absentStudents}</td>
+                    <td>
+                      {r.evidenceFiles?.length > 0 ? (
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                          {r.evidenceFiles.map(f => (
+                            <a
+                              key={f.id}
+                              href={`https://clubreport.parameedev.online/files/${f.filePath}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: '#1a56db', fontSize: '0.82rem', textDecoration: 'underline' }}
+                            >
+                              {f.fileName}
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ color: '#9ca3af', fontSize: '0.82rem' }}>ไม่มีไฟล์</span>
+                      )}
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteReport(r.id)}
+                      >
+                        ลบ
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

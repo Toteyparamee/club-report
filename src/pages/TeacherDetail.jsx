@@ -60,6 +60,7 @@ export default function TeacherDetail() {
             <thead>
               <tr>
                 <th>#</th>
+                <th>ชื่อชุมนุม</th>
                 <th>ระดับชั้น</th>
                 <th>วันที่จัดกิจกรรม</th>
                 <th>นักเรียนทั้งหมด</th>
@@ -72,6 +73,7 @@ export default function TeacherDetail() {
               {teacher.reports.map((r, i) => (
                 <tr key={r.id}>
                   <td>{i + 1}</td>
+                  <td>{teacher.clubName}</td>
                   <td><span className="badge badge-green">{r.gradeLevel}</span></td>
                   <td>{new Date(r.activityDate).toLocaleDateString('th-TH')}</td>
                   <td>{r.totalStudents}</td>

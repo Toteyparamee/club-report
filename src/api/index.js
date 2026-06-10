@@ -17,8 +17,8 @@ export const createTeacher = (data) => api.post('/teachers', data).then(r => r.d
 export const updateTeacher = (id, data) => api.put(`/teachers/${id}`, data).then(r => r.data);
 export const deleteTeacher = (id) => api.delete(`/teachers/${id}`).then(r => r.data);
 
-export const getReports = (teacherId) =>
-  api.get('/reports', { params: teacherId ? { teacherId } : {} }).then(r => r.data);
+export const getReports = (params = {}) =>
+  api.get('/reports', { params }).then(r => r.data);
 export const getReport = (id) => api.get(`/reports/${id}`).then(r => r.data);
 export const createReport = (formData) =>
   api.post('/reports', formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
