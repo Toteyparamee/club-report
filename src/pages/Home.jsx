@@ -1,43 +1,50 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getReports } from '../api';
 
 export default function Home() {
   const navigate = useNavigate();
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getReports()
+      .then(setReports)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div style={{
       minHeight: 'calc(100vh - 60px)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
       padding: '2rem',
       background: 'linear-gradient(135deg, #e8f0fe 0%, #f4f6fb 60%, #fce8f3 100%)',
     }}>
-      {/* Hero card */}
-      <div style={{
-        background: '#fff',
-        borderRadius: '24px',
-        boxShadow: '0 8px 40px rgba(26,86,219,0.10)',
-        padding: '3rem 3.5rem',
-        maxWidth: '520px',
-        width: '100%',
-        textAlign: 'center',
-      }}>
-        {/* Logo */}
-        <img
-          src="/logo.png"
-          alt="logo"
-          style={{ width: '90px', height: '90px', objectFit: 'contain', margin: '0 auto 1.5rem', display: 'block' }}
-        />
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
 
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1e293b', lineHeight: 1.35, marginBottom: '0.6rem' }}>
-          ระบบรายงานผลการดำเนินกิจกรรมชุมนุม
-        </h1>
-        <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '2.5rem' }}>
-          กรุณาเลือกประเภทการใช้งาน
-        </p>
+        {/* Hero card */}
+        <div style={{
+          background: '#fff',
+          borderRadius: '24px',
+          boxShadow: '0 8px 40px rgba(26,86,219,0.10)',
+          padding: '3rem 3.5rem',
+          maxWidth: '520px',
+          width: '100%',
+          textAlign: 'center',
+          margin: '0 auto 2.5rem',
+        }}>
+          <img
+            src="/logo.png"
+            alt="logo"
+            style={{ width: '90px', height: '90px', objectFit: 'contain', margin: '0 auto 1.5rem', display: 'block' }}
+          />
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1e293b', lineHeight: 1.35, marginBottom: '0.6rem' }}>
+            ระบบรายงานผลการดำเนินกิจกรรมชุมนุม
+          </h1>
+          <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '2.5rem' }}>
+            กรุณาเลือกประเภทการใช้งาน
+          </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {/* กรอกรายงาน */}
           <button
             onClick={() => navigate('/report/new')}
             style={{
@@ -47,7 +54,7 @@ export default function Home() {
               color: '#fff',
               border: 'none', borderRadius: '14px',
               cursor: 'pointer', fontSize: '1rem', fontWeight: 600,
-              fontFamily: 'inherit',
+              fontFamily: 'inherit', width: '100%',
               boxShadow: '0 4px 14px rgba(26,86,219,0.3)',
               transition: 'transform 0.15s, box-shadow 0.15s',
             }}
@@ -68,44 +75,81 @@ export default function Home() {
               <div style={{ fontSize: '0.8rem', opacity: 0.85, fontWeight: 400 }}>บันทึกผลการดำเนินกิจกรรมชุมนุม</div>
             </div>
           </button>
-
-          {/* Admin */}
-          <button
-            onClick={() => navigate('/admin')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '1rem',
-              padding: '1rem 1.5rem',
-              background: '#fff',
-              color: '#1e293b',
-              border: '1.5px solid #e2e8f0', borderRadius: '14px',
-              cursor: 'pointer', fontSize: '1rem', fontWeight: 600,
-              fontFamily: 'inherit',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              transition: 'transform 0.15s, box-shadow 0.15s, border-color 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'; e.currentTarget.style.borderColor = '#1a56db'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
-          >
-            <span style={{
-              width: '40px', height: '40px', background: '#f1f5f9',
-              borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-              </svg>
-            </span>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '1rem', fontWeight: 700 }}>Admin</div>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 400 }}>ดูภาพรวมและจัดการข้อมูล</div>
-            </div>
-          </button>
         </div>
-      </div>
 
-      <p style={{ marginTop: '2rem', color: '#cbd5e1', fontSize: '0.8rem' }}>
-        ระบบรายงานกิจกรรมชุมนุม · โรงเรียน
-      </p>
+        {/* ตารางรายงานล่าสุด */}
+        <div style={{ background: '#fff', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1e293b', marginBottom: '1rem' }}>
+            รายงานล่าสุด
+          </h2>
+
+          {loading ? (
+            <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>กำลังโหลด...</p>
+          ) : reports.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>ยังไม่มีรายงาน</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.93rem' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5ff' }}>
+                    <th style={th}>#</th>
+                    <th style={th}>ครูผู้สอน</th>
+                    <th style={th}>ชุมนุม</th>
+                    <th style={th}>กลุ่มสาระ</th>
+                    <th style={th}>ระดับชั้น</th>
+                    <th style={th}>วันที่จัดกิจกรรม</th>
+                    <th style={th}>นักเรียนทั้งหมด</th>
+                    <th style={th}>ขาดเรียน</th>
+                    <th style={th}>หลักฐาน</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reports.map((r, i) => (
+                    <tr key={r.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <td style={td}>{i + 1}</td>
+                      <td style={{ ...td, whiteSpace: 'nowrap' }}>{r.teacher?.prefix}{r.teacher?.firstName} {r.teacher?.lastName}</td>
+                      <td style={td}>{r.teacher?.clubName}</td>
+                      <td style={td}><span style={badgeBlue}>{r.teacher?.subjectGroup}</span></td>
+                      <td style={td}><span style={badgeGreen}>{r.gradeLevel}</span></td>
+                      <td style={{ ...td, whiteSpace: 'nowrap' }}>{new Date(r.activityDate).toLocaleDateString('th-TH')}</td>
+                      <td style={td}>{r.totalStudents}</td>
+                      <td style={td}>{r.absentStudents}</td>
+                      <td style={td}>
+                        {r.evidenceFiles?.length > 0 ? (
+                          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                            {r.evidenceFiles.map(f => (
+                              <a
+                                key={f.id}
+                                href={`https://clubreport.parameedev.online/files/${f.filePath}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ color: '#1a56db', fontSize: '0.82rem', textDecoration: 'underline' }}
+                              >
+                                {f.fileName}
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#9ca3af', fontSize: '0.82rem' }}>ไม่มีไฟล์</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <p style={{ marginTop: '2rem', color: '#cbd5e1', fontSize: '0.8rem', textAlign: 'center' }}>
+          ระบบรายงานกิจกรรมชุมนุม · โรงเรียน
+        </p>
+      </div>
     </div>
   );
 }
+
+const th = { padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: '#374151' };
+const td = { padding: '0.75rem 1rem', textAlign: 'left' };
+const badgeBlue = { display: 'inline-block', padding: '0.2rem 0.65rem', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: '#dbeafe', color: '#1e40af' };
+const badgeGreen = { display: 'inline-block', padding: '0.2rem 0.65rem', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: '#d1fae5', color: '#065f46' };
