@@ -1,11 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getReports } from '../api';
+
+const HEALTH_URL = 'https://clubreport.parameedev.online/api/health';
+const POLL_INTERVAL = 30_000; // 30 วินาที
 
 export default function Home() {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [serverDown, setServerDown] = useState(false);
+  const wasDownRef = useRef(false);
+
+  // health check loop
+  useEffect(() => {
+    let timer;
+
+    async function checkHealth() {
+      try {
+        const res = await fetch(HEALTH_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error('not ok');
+        setServerDown(false);
+        wasDownRef.current = false;
+      } catch {
+        if (!wasDownRef.current) {
+          // เพิ่งตรวจพบว่าล่ม — แจ้ง backend ให้ set flag
+          wasDownRef.current = true;
+          fetch('https://clubreport.parameedev.online/api/settings/server-down', {
+            method: 'POST',
+          }).catch(() => {});
+        }
+        setServerDown(true);
+      }
+      timer = setTimeout(checkHealth, POLL_INTERVAL);
+    }
+
+    checkHealth();
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     getReports()
@@ -21,6 +53,29 @@ export default function Home() {
       background: 'linear-gradient(135deg, #e8f0fe 0%, #f4f6fb 60%, #fce8f3 100%)',
     }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+
+        {/* Server down banner */}
+        {serverDown && (
+          <div style={{
+            background: '#fef2f2',
+            border: '1.5px solid #fca5a5',
+            borderRadius: '14px',
+            padding: '1rem 1.5rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            color: '#b91c1c',
+          }}>
+            <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>⚠️</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.97rem' }}>ขณะนี้ไม่สามารถกรอกรายงานได้</div>
+              <div style={{ fontSize: '0.85rem', marginTop: '0.2rem', color: '#dc2626' }}>
+                เนื่องจาก Server ขัดข้องอยู่ในขณะนี้ กรุณารอสักครู่แล้วลองใหม่อีกครั้ง
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Hero card */}
         <div style={{
@@ -46,20 +101,25 @@ export default function Home() {
           </p>
 
           <button
-            onClick={() => navigate('/report/new')}
+            onClick={() => !serverDown && navigate('/report/new')}
+            disabled={serverDown}
             style={{
               display: 'flex', alignItems: 'center', gap: '1rem',
               padding: '1rem 1.5rem',
-              background: 'linear-gradient(135deg, #1a56db, #6366f1)',
+              background: serverDown
+                ? 'linear-gradient(135deg, #94a3b8, #cbd5e1)'
+                : 'linear-gradient(135deg, #1a56db, #6366f1)',
               color: '#fff',
               border: 'none', borderRadius: '14px',
-              cursor: 'pointer', fontSize: '1rem', fontWeight: 600,
+              cursor: serverDown ? 'not-allowed' : 'pointer',
+              fontSize: '1rem', fontWeight: 600,
               fontFamily: 'inherit', width: '100%',
-              boxShadow: '0 4px 14px rgba(26,86,219,0.3)',
+              boxShadow: serverDown ? 'none' : '0 4px 14px rgba(26,86,219,0.3)',
               transition: 'transform 0.15s, box-shadow 0.15s',
+              opacity: serverDown ? 0.7 : 1,
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,86,219,0.4)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 14px rgba(26,86,219,0.3)'; }}
+            onMouseEnter={e => { if (!serverDown) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,86,219,0.4)'; } }}
+            onMouseLeave={e => { if (!serverDown) { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 14px rgba(26,86,219,0.3)'; } }}
           >
             <span style={{
               width: '40px', height: '40px', background: 'rgba(255,255,255,0.2)',
@@ -71,7 +131,9 @@ export default function Home() {
               </svg>
             </span>
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '1rem', fontWeight: 700 }}>กรอกรายงาน</div>
+              <div style={{ fontSize: '1rem', fontWeight: 700 }}>
+                {serverDown ? 'ไม่สามารถกรอกได้ (Server ขัดข้อง)' : 'กรอกรายงาน'}
+              </div>
               <div style={{ fontSize: '0.8rem', opacity: 0.85, fontWeight: 400 }}>บันทึกผลการดำเนินกิจกรรมชุมนุม</div>
             </div>
           </button>
