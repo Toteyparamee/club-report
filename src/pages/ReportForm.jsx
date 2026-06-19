@@ -103,6 +103,10 @@ export default function ReportForm() {
       teacherId: id,
       subjectGroup: teacher ? teacher.subjectGroup : '',
       clubName: teacher ? teacher.clubName : '',
+      gradeLevel: teacher?.gradeLevel || f.gradeLevel,
+      totalStudents: teacher?.totalStudents != null && teacher.totalStudents > 0
+        ? String(teacher.totalStudents)
+        : f.totalStudents,
     }));
   };
 
