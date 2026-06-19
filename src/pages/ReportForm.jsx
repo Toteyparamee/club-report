@@ -78,9 +78,22 @@ export default function ReportForm() {
     absentStudents: '',
   });
 
+  const [filterGroup, setFilterGroup] = useState('');
+
   useEffect(() => {
     getTeachers().then(setAllTeachers).catch(() => {});
   }, []);
+
+  const subjectGroups = [...new Set(allTeachers.map(t => t.subjectGroup))].sort();
+
+  const filteredTeachers = filterGroup
+    ? allTeachers.filter(t => t.subjectGroup === filterGroup)
+    : allTeachers;
+
+  const handleFilterGroupChange = (e) => {
+    setFilterGroup(e.target.value);
+    setForm(f => ({ ...f, teacherId: '', subjectGroup: '', clubName: '' }));
+  };
 
   const handleTeacherChange = (e) => {
     const id = e.target.value;
@@ -158,11 +171,21 @@ export default function ReportForm() {
         <div style={cardStyle}>
           <SectionTitle icon="👤" title="ข้อมูลผู้สอน" />
 
+          <FormLabel>กรองตามกลุ่มสาระ (ไม่บังคับ)</FormLabel>
+          <div style={{ marginBottom: '1.1rem' }}>
+            <select value={filterGroup} onChange={handleFilterGroupChange} style={selectStyle}>
+              <option value="">— ครูทั้งหมด —</option>
+              {subjectGroups.map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
+
           <FormLabel>ครูผู้สอน</FormLabel>
           <div style={{ marginBottom: '1.1rem' }}>
             <select value={form.teacherId} onChange={handleTeacherChange} style={selectStyle}>
               <option value="">— เลือกครูผู้สอน —</option>
-              {allTeachers.map(t => (
+              {filteredTeachers.map(t => (
                 <option key={t.id} value={t.id}>
                   {t.prefix}{t.firstName} {t.lastName} ({t.clubName})
                 </option>
