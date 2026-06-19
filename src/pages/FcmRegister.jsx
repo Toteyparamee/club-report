@@ -19,6 +19,7 @@ export default function FcmRegister() {
   useEffect(() => {
     getTeachers().then(setTeachers).catch(() => {});
     const unsub = onMessage(messaging, (payload) => {
+      console.log('[FCM foreground]', payload);
       const { title, body } = payload.notification;
       setStatus('success');
       setMessage(`${title} — ${body}`);
