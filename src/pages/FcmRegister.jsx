@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getTeachers, registerFcmToken } from '../api';
-import { requestFcmToken } from '../firebase';
+import { requestFcmToken, messaging, onMessage } from '../firebase';
 
 const selectStyle = {
   width: '100%', padding: '0.65rem 1rem',
@@ -18,6 +18,12 @@ export default function FcmRegister() {
 
   useEffect(() => {
     getTeachers().then(setTeachers).catch(() => {});
+    const unsub = onMessage(messaging, (payload) => {
+      const { title, body } = payload.notification;
+      setStatus('success');
+      setMessage(`${title} — ${body}`);
+    });
+    return () => unsub();
   }, []);
 
   const subjectGroups = [...new Set(teachers.map(t => t.subjectGroup))].sort();
