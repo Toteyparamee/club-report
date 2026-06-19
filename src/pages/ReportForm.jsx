@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTeachers, getSubjectGroupsFromTeachers, getClubNames, createReport } from '../api';
+import { getTeachers, createReport } from '../api';
 
 const GRADE_LEVELS = ['ม.ต้น','ม.ปลาย','รวม(ม.ต้น+ม.ปลาย)'];
 
@@ -57,9 +57,8 @@ function FormLabel({ children }) {
 
 export default function ReportForm() {
   const navigate = useNavigate();
-  const [subjectGroups, setSubjectGroups] = useState([]);
-  const [clubNames, setClubNames] = useState([]);
-  const [teachers, setTeachers] = useState([]);
+  const [allTeachers, setAllTeachers] = useState([]);
+  const [search, setSearch] = useState('');
   const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -76,35 +75,34 @@ export default function ReportForm() {
   });
 
   useEffect(() => {
-    getSubjectGroupsFromTeachers().then(setSubjectGroups).catch(() => {});
+    getTeachers().then(setAllTeachers).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (form.subjectGroup) {
-      getClubNames(form.subjectGroup).then(setClubNames).catch(() => setClubNames([]));
-      getTeachers(form.subjectGroup).then(setTeachers).catch(() => setTeachers([]));
-    } else {
-      setClubNames([]);
-      setTeachers([]);
-    }
-    setForm(f => ({ ...f, clubName: '', teacherId: '' }));
-  }, [form.subjectGroup]);
+  const filteredTeachers = search.trim()
+    ? allTeachers.filter(t =>
+        `${t.prefix}${t.firstName} ${t.lastName} ${t.clubName}`.includes(search.trim())
+      )
+    : allTeachers;
 
-  useEffect(() => {
-    if (form.clubName) {
-      getTeachers(form.subjectGroup).then(ts =>
-        setTeachers(ts.filter(t => t.clubName === form.clubName))
-      ).catch(() => setTeachers([]));
-    } else if (form.subjectGroup) {
-      getTeachers(form.subjectGroup).then(setTeachers).catch(() => setTeachers([]));
-    }
-    setForm(f => ({ ...f, teacherId: '' }));
-  }, [form.clubName]);
+  const handleSelectTeacher = (teacher) => {
+    setSearch(`${teacher.prefix}${teacher.firstName} ${teacher.lastName}`);
+    setForm(f => ({
+      ...f,
+      teacherId: String(teacher.id),
+      subjectGroup: teacher.subjectGroup,
+      clubName: teacher.clubName,
+    }));
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setForm(f => ({ ...f, teacherId: '', subjectGroup: '', clubName: '' }));
+  };
 
   const setField = (k) => (v) => setForm(f => ({ ...f, [k]: v }));
   const setInput = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const selectedTeacher = teachers.find(t => String(t.id) === String(form.teacherId));
+  const selectedTeacher = allTeachers.find(t => String(t.id) === String(form.teacherId));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -173,54 +171,75 @@ export default function ReportForm() {
           <SectionTitle icon="👤" title="ข้อมูลผู้สอน" />
 
           <FormLabel>ครูผู้สอน</FormLabel>
-          <div style={{ marginBottom: '1.1rem' }}>
-            <select
-              value={form.teacherId}
-              onChange={setInput('teacherId')}
-              disabled={!form.subjectGroup}
+          <div style={{ marginBottom: '1.1rem', position: 'relative' }}>
+            <input
+              type="text"
+              value={search}
+              onChange={handleSearchChange}
+              placeholder="พิมพ์ชื่อครูหรือชุมนุมเพื่อค้นหา..."
               style={{
                 width: '100%', padding: '0.65rem 1rem',
-                border: '1.5px solid #e2e8f0', borderRadius: '10px',
+                border: `1.5px solid ${form.teacherId ? '#1a56db' : '#e2e8f0'}`,
+                borderRadius: '10px',
                 fontSize: '0.95rem', background: '#f8fafc', color: '#1e293b',
                 fontFamily: 'inherit', boxSizing: 'border-box',
               }}
-            >
-              <option value="">{form.subjectGroup ? '— เลือกครูผู้สอน —' : '— เลือกกลุ่มสาระก่อน —'}</option>
-              {teachers.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.prefix}{t.firstName} {t.lastName} ({t.clubName})
-                </option>
-              ))}
-            </select>
+            />
+            {search && !form.teacherId && filteredTeachers.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+                background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: '10px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.1)', maxHeight: '220px', overflowY: 'auto',
+                marginTop: '4px',
+              }}>
+                {filteredTeachers.map(t => (
+                  <div
+                    key={t.id}
+                    onClick={() => handleSelectTeacher(t)}
+                    style={{
+                      padding: '0.65rem 1rem', cursor: 'pointer',
+                      borderBottom: '1px solid #f1f5f9',
+                      fontSize: '0.92rem', color: '#1e293b',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f0f7ff'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span style={{ fontWeight: 600 }}>{t.prefix}{t.firstName} {t.lastName}</span>
+                    <span style={{ color: '#94a3b8', marginLeft: '0.5rem', fontSize: '0.85rem' }}>
+                      {t.clubName} · {t.subjectGroup}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             {selectedTeacher && (
-              <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#6b7280' }}>
-                🎒 ชุมนุม: <strong>{selectedTeacher.clubName}</strong>
+              <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#15803d' }}>
+                ✅ ชุมนุม: <strong>{selectedTeacher.clubName}</strong> · กลุ่มสาระ: <strong>{selectedTeacher.subjectGroup}</strong>
               </div>
             )}
           </div>
 
-          <FormLabel>กลุ่มสาระการเรียนรู้</FormLabel>
-          <div style={{ marginBottom: '1.1rem' }}>
-            {subjectGroups.length > 0 ? (
-              <ChipGroup
-                options={subjectGroups}
-                value={form.subjectGroup}
-                onChange={setField('subjectGroup')}
-              />
-            ) : (
-              <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>ยังไม่มีข้อมูล — กรุณาเพิ่มครูในหน้า Admin ก่อน</span>
-            )}
-          </div>
-
-          {clubNames.length > 0 && (
+          {form.subjectGroup && (
             <>
+              <FormLabel>กลุ่มสาระการเรียนรู้</FormLabel>
+              <div style={{ marginBottom: '1.1rem' }}>
+                <div style={{
+                  padding: '0.5rem 1rem', background: '#f0f7ff',
+                  border: '1.5px solid #bfdbfe', borderRadius: '10px',
+                  fontSize: '0.92rem', color: '#1a56db', fontWeight: 600,
+                }}>
+                  {form.subjectGroup}
+                </div>
+              </div>
               <FormLabel>ชื่อชุมนุม</FormLabel>
               <div style={{ marginBottom: '1.1rem' }}>
-                <ChipGroup
-                  options={clubNames}
-                  value={form.clubName}
-                  onChange={setField('clubName')}
-                />
+                <div style={{
+                  padding: '0.5rem 1rem', background: '#f0f7ff',
+                  border: '1.5px solid #bfdbfe', borderRadius: '10px',
+                  fontSize: '0.92rem', color: '#1a56db', fontWeight: 600,
+                }}>
+                  {form.clubName}
+                </div>
               </div>
             </>
           )}
