@@ -4,18 +4,16 @@ import { getTeachers, createReport } from '../api';
 
 const GRADE_LEVELS = ['ม.ต้น','ม.ปลาย','รวม(ม.ต้น+ม.ปลาย)'];
 
-function ChipGroup({ options, value, onChange, getLabel, getValue }) {
+function ChipGroup({ options, value, onChange }) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
       {options.map((opt) => {
-        const v = getValue ? getValue(opt) : opt;
-        const label = getLabel ? getLabel(opt) : opt;
-        const selected = value === v;
+        const selected = value === opt;
         return (
           <button
-            key={v}
+            key={opt}
             type="button"
-            onClick={() => onChange(selected ? '' : v)}
+            onClick={() => onChange(selected ? '' : opt)}
             style={{
               padding: '0.45rem 1rem',
               borderRadius: '10px',
@@ -30,7 +28,7 @@ function ChipGroup({ options, value, onChange, getLabel, getValue }) {
               boxShadow: selected ? '0 0 0 3px rgba(26,86,219,0.1)' : 'none',
             }}
           >
-            {label}
+            {opt}
           </button>
         );
       })}
@@ -55,19 +53,25 @@ function FormLabel({ children }) {
   );
 }
 
+const selectStyle = {
+  width: '100%', padding: '0.65rem 1rem',
+  border: '1.5px solid #e2e8f0', borderRadius: '10px',
+  fontSize: '0.95rem', background: '#f8fafc', color: '#1e293b',
+  fontFamily: 'inherit', boxSizing: 'border-box',
+};
+
 export default function ReportForm() {
   const navigate = useNavigate();
   const [allTeachers, setAllTeachers] = useState([]);
-  const [search, setSearch] = useState('');
   const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
+    teacherId: '',
     subjectGroup: '',
     clubName: '',
-    teacherId: '',
     gradeLevel: '',
     activityDate: new Date().toISOString().slice(0, 10),
     totalStudents: '',
@@ -78,25 +82,15 @@ export default function ReportForm() {
     getTeachers().then(setAllTeachers).catch(() => {});
   }, []);
 
-  const filteredTeachers = search.trim()
-    ? allTeachers.filter(t =>
-        `${t.prefix}${t.firstName} ${t.lastName} ${t.clubName}`.includes(search.trim())
-      )
-    : allTeachers;
-
-  const handleSelectTeacher = (teacher) => {
-    setSearch(`${teacher.prefix}${teacher.firstName} ${teacher.lastName}`);
+  const handleTeacherChange = (e) => {
+    const id = e.target.value;
+    const teacher = allTeachers.find(t => String(t.id) === id);
     setForm(f => ({
       ...f,
-      teacherId: String(teacher.id),
-      subjectGroup: teacher.subjectGroup,
-      clubName: teacher.clubName,
+      teacherId: id,
+      subjectGroup: teacher ? teacher.subjectGroup : '',
+      clubName: teacher ? teacher.clubName : '',
     }));
-  };
-
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setForm(f => ({ ...f, teacherId: '', subjectGroup: '', clubName: '' }));
   };
 
   const setField = (k) => (v) => setForm(f => ({ ...f, [k]: v }));
@@ -107,7 +101,6 @@ export default function ReportForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.subjectGroup) return setError('กรุณาเลือกกลุ่มสาระการเรียนรู้');
     if (!form.teacherId) return setError('กรุณาเลือกครูผู้สอน');
     if (!form.gradeLevel) return setError('กรุณาเลือกระดับชั้น');
     if (!form.activityDate) return setError('กรุณาระบุวันที่จัดกิจกรรม');
@@ -145,11 +138,7 @@ export default function ReportForm() {
 
   return (
     <div style={{ maxWidth: 680, margin: '2rem auto', padding: '0 1rem' }}>
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="back-link"
-      >
+      <button type="button" onClick={() => navigate(-1)} className="back-link">
         ← กลับ
       </button>
       {error && (
@@ -166,83 +155,48 @@ export default function ReportForm() {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* ข้อมูลผู้สอน */}
         <div style={cardStyle}>
           <SectionTitle icon="👤" title="ข้อมูลผู้สอน" />
 
           <FormLabel>ครูผู้สอน</FormLabel>
-          <div style={{ marginBottom: '1.1rem', position: 'relative' }}>
-            <input
-              type="text"
-              value={search}
-              onChange={handleSearchChange}
-              placeholder="พิมพ์ชื่อครูหรือชุมนุมเพื่อค้นหา..."
-              style={{
-                width: '100%', padding: '0.65rem 1rem',
-                border: `1.5px solid ${form.teacherId ? '#1a56db' : '#e2e8f0'}`,
-                borderRadius: '10px',
-                fontSize: '0.95rem', background: '#f8fafc', color: '#1e293b',
-                fontFamily: 'inherit', boxSizing: 'border-box',
-              }}
-            />
-            {search && !form.teacherId && filteredTeachers.length > 0 && (
-              <div style={{
-                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
-                background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: '10px',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)', maxHeight: '220px', overflowY: 'auto',
-                marginTop: '4px',
-              }}>
-                {filteredTeachers.map(t => (
-                  <div
-                    key={t.id}
-                    onClick={() => handleSelectTeacher(t)}
-                    style={{
-                      padding: '0.65rem 1rem', cursor: 'pointer',
-                      borderBottom: '1px solid #f1f5f9',
-                      fontSize: '0.92rem', color: '#1e293b',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f0f7ff'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <span style={{ fontWeight: 600 }}>{t.prefix}{t.firstName} {t.lastName}</span>
-                    <span style={{ color: '#94a3b8', marginLeft: '0.5rem', fontSize: '0.85rem' }}>
-                      {t.clubName} · {t.subjectGroup}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {selectedTeacher && (
-              <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#15803d' }}>
-                ✅ ชุมนุม: <strong>{selectedTeacher.clubName}</strong> · กลุ่มสาระ: <strong>{selectedTeacher.subjectGroup}</strong>
-              </div>
-            )}
+          <div style={{ marginBottom: '1.1rem' }}>
+            <select value={form.teacherId} onChange={handleTeacherChange} style={selectStyle}>
+              <option value="">— เลือกครูผู้สอน —</option>
+              {allTeachers.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.prefix}{t.firstName} {t.lastName} ({t.clubName})
+                </option>
+              ))}
+            </select>
           </div>
 
-          {form.subjectGroup && (
-            <>
-              <FormLabel>กลุ่มสาระการเรียนรู้</FormLabel>
-              <div style={{ marginBottom: '1.1rem' }}>
-                <div style={{
-                  padding: '0.5rem 1rem', background: '#f0f7ff',
-                  border: '1.5px solid #bfdbfe', borderRadius: '10px',
-                  fontSize: '0.92rem', color: '#1a56db', fontWeight: 600,
-                }}>
-                  {form.subjectGroup}
-                </div>
-              </div>
-              <FormLabel>ชื่อชุมนุม</FormLabel>
-              <div style={{ marginBottom: '1.1rem' }}>
-                <div style={{
-                  padding: '0.5rem 1rem', background: '#f0f7ff',
-                  border: '1.5px solid #bfdbfe', borderRadius: '10px',
-                  fontSize: '0.92rem', color: '#1a56db', fontWeight: 600,
-                }}>
-                  {form.clubName}
-                </div>
-              </div>
-            </>
-          )}
+          <FormLabel>กลุ่มสาระการเรียนรู้</FormLabel>
+          <div style={{ marginBottom: '1.1rem' }}>
+            <div style={{
+              padding: '0.65rem 1rem',
+              border: '1.5px solid #e2e8f0', borderRadius: '10px',
+              fontSize: '0.95rem',
+              background: form.subjectGroup ? '#f0f7ff' : '#f8fafc',
+              color: form.subjectGroup ? '#1a56db' : '#94a3b8',
+              fontWeight: form.subjectGroup ? 600 : 400,
+            }}>
+              {form.subjectGroup || '— จะแสดงอัตโนมัติเมื่อเลือกครู —'}
+            </div>
+          </div>
+
+          <FormLabel>ชื่อชุมนุม</FormLabel>
+          <div style={{ marginBottom: '1.1rem' }}>
+            <div style={{
+              padding: '0.65rem 1rem',
+              border: '1.5px solid #e2e8f0', borderRadius: '10px',
+              fontSize: '0.95rem',
+              background: form.clubName ? '#f0f7ff' : '#f8fafc',
+              color: form.clubName ? '#1a56db' : '#94a3b8',
+              fontWeight: form.clubName ? 600 : 400,
+            }}>
+              {form.clubName || '— จะแสดงอัตโนมัติเมื่อเลือกครู —'}
+            </div>
+          </div>
 
           <FormLabel>ระดับชั้น</FormLabel>
           <div style={{ marginBottom: '1.1rem' }}>
@@ -260,12 +214,7 @@ export default function ReportForm() {
               value={form.activityDate}
               onChange={setInput('activityDate')}
               required
-              style={{
-                width: '100%', padding: '0.65rem 1rem',
-                border: '1.5px solid #e2e8f0', borderRadius: '10px',
-                fontSize: '0.95rem', background: '#f8fafc', color: '#1e293b',
-                fontFamily: 'inherit', boxSizing: 'border-box',
-              }}
+              style={selectStyle}
             />
             {thaiDate && (
               <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.35rem' }}>
@@ -275,7 +224,6 @@ export default function ReportForm() {
           </div>
         </div>
 
-        {/* จำนวนนักเรียน */}
         <div style={cardStyle}>
           <SectionTitle icon="👥" title="จำนวนนักเรียน" />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -286,12 +234,7 @@ export default function ReportForm() {
                 value={form.totalStudents}
                 onChange={setInput('totalStudents')}
                 placeholder="0"
-                style={{
-                  width: '100%', padding: '0.65rem 1rem',
-                  border: '1.5px solid #e2e8f0', borderRadius: '10px',
-                  fontSize: '0.95rem', background: '#f8fafc',
-                  fontFamily: 'inherit', boxSizing: 'border-box',
-                }}
+                style={selectStyle}
               />
             </div>
             <div>
@@ -301,18 +244,12 @@ export default function ReportForm() {
                 value={form.absentStudents}
                 onChange={setInput('absentStudents')}
                 placeholder="0"
-                style={{
-                  width: '100%', padding: '0.65rem 1rem',
-                  border: '1.5px solid #e2e8f0', borderRadius: '10px',
-                  fontSize: '0.95rem', background: '#f8fafc',
-                  fontFamily: 'inherit', boxSizing: 'border-box',
-                }}
+                style={selectStyle}
               />
             </div>
           </div>
         </div>
 
-        {/* แนบไฟล์ */}
         <div style={cardStyle}>
           <SectionTitle icon="📎" title="แนบไฟล์หลักฐาน" />
           <label style={{
@@ -341,7 +278,6 @@ export default function ReportForm() {
           )}
         </div>
 
-        {/* ปุ่ม */}
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
           <button
             type="submit"
