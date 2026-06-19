@@ -22,6 +22,10 @@ export default function FcmRegister() {
     const unsub = onMessage(messaging, (payload) => {
       const { title, body } = payload.notification;
       setFcmMessage(`${title} — ${body}`);
+      // แสดง OS popup แม้จะอยู่ foreground
+      navigator.serviceWorker.ready.then(sw => {
+        sw.showNotification(title, { body, icon: '/logo.png', requireInteraction: true });
+      });
     });
     return () => unsub();
   }, []);
