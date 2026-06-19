@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getTeachers, registerFcmToken } from '../api';
 import { requestFcmToken, messaging, onMessage } from '../firebase';
 
@@ -15,14 +15,13 @@ export default function FcmRegister() {
   const [filterGroup, setFilterGroup] = useState('');
   const [status, setStatus] = useState('idle'); // idle | loading | success | error | denied
   const [message, setMessage] = useState('');
+  const [fcmMessage, setFcmMessage] = useState(null);
 
   useEffect(() => {
     getTeachers().then(setTeachers).catch(() => {});
     const unsub = onMessage(messaging, (payload) => {
-      console.log('[FCM foreground]', payload);
       const { title, body } = payload.notification;
-      setStatus('success');
-      setMessage(`${title} — ${body}`);
+      setFcmMessage(`${title} — ${body}`);
     });
     return () => unsub();
   }, []);
@@ -163,6 +162,15 @@ export default function FcmRegister() {
           </>
         )}
 
+        {fcmMessage && (
+          <div style={{
+            background: '#f0fdf4', border: '1px solid #bbf7d0',
+            borderRadius: '10px', padding: '0.75rem 1rem',
+            color: '#15803d', fontSize: '0.88rem', marginTop: '1rem', textAlign: 'center',
+          }}>
+            🔔 {fcmMessage}
+          </div>
+        )}
         <p style={{ fontSize: '0.78rem', color: '#94a3b8', textAlign: 'center', marginTop: '1rem', marginBottom: 0 }}>
           ระบบจะแจ้งเตือนเมื่อใกล้ถึงวันกรอกรายงานชุมนุม
         </p>
