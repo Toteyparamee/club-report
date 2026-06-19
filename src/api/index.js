@@ -28,3 +28,6 @@ export const deleteReport = (id) => api.delete(`/reports/${id}`).then(r => r.dat
 
 export const getNotifyEnabled = () => api.get('/settings/notify-enabled').then(r => r.data);
 export const setNotifyEnabled = (enabled) => api.post('/settings/notify-enabled', { enabled }).then(r => r.data);
+
+export const registerFcmToken = (teacherId, token) =>
+  api.post(`/teachers/${teacherId}/fcm-token`, { token }).then(r => r.data);
