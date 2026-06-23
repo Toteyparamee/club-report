@@ -8,7 +8,7 @@ export default function Navbar() {
         to="/register-notify"
         style={({ isActive }) => ({
           fontSize: '0.85rem', fontWeight: 600,
-          color: isActive ? '#1a56db' : '#64748b',
+          color: isActive ? '#1a56db' : '#ffffff',
           textDecoration: 'none', whiteSpace: 'nowrap',
         })}
       >
