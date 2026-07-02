@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -8,7 +8,15 @@ import FcmReminderDialog from './components/FcmReminderDialog';
 import { shouldShowFcmReminder } from './utils/fcmReminder';
 
 export default function App() {
-  const [showFcmReminder, setShowFcmReminder] = useState(shouldShowFcmReminder);
+  const [showFcmReminder, setShowFcmReminder] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    shouldShowFcmReminder().then(show => {
+      if (!cancelled && show) setShowFcmReminder(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <BrowserRouter>
