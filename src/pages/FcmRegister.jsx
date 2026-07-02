@@ -62,6 +62,7 @@ export default function FcmRegister() {
 
     try {
       await registerFcmToken(Number(teacherId), token);
+      localStorage.setItem('fcmRegistered', '1');
       setStatus('success');
       setMessage(`ลงทะเบียนเรียบร้อย! ${selectedTeacher.prefix}${selectedTeacher.firstName} ${selectedTeacher.lastName} จะได้รับการแจ้งเตือนบนอุปกรณ์นี้`);
     } catch {
