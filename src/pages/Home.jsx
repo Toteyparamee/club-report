@@ -11,6 +11,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [serverDown, setServerDown] = useState(false);
   const wasDownRef = useRef(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   // health check loop
   useEffect(() => {
@@ -179,17 +180,30 @@ export default function Home() {
                       <td style={td}>
                         {r.evidenceFiles?.length > 0 ? (
                           <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                            {r.evidenceFiles.map(f => (
-                              <a
-                                key={f.id}
-                                href={`https://clubreport.parameedev.online/files/${f.filePath}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ color: '#1a56db', fontSize: '0.82rem', textDecoration: 'underline' }}
-                              >
-                                {f.fileName}
-                              </a>
-                            ))}
+                            {r.evidenceFiles.map(f => {
+                              const url = `https://clubreport.parameedev.online/files/${f.filePath}`;
+                              const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(f.fileName);
+                              return isImage ? (
+                                <button
+                                  key={f.id}
+                                  type="button"
+                                  onClick={() => setPreviewFile({ url, name: f.fileName })}
+                                  style={{ background: 'none', border: 'none', padding: 0, color: '#1a56db', fontSize: '0.82rem', textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit' }}
+                                >
+                                  {f.fileName}
+                                </button>
+                              ) : (
+                                <a
+                                  key={f.id}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{ color: '#1a56db', fontSize: '0.82rem', textDecoration: 'underline' }}
+                                >
+                                  {f.fileName}
+                                </a>
+                              );
+                            })}
                           </div>
                         ) : (
                           <span style={{ color: '#9ca3af', fontSize: '0.82rem' }}>ไม่มีไฟล์</span>
@@ -207,6 +221,42 @@ export default function Home() {
           ระบบรายงานกิจกรรมชุมนุม · โรงเรียน
         </p>
       </div>
+
+      {previewFile && (
+        <div
+          onClick={() => setPreviewFile(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: '1rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewFile(null)}
+              aria-label="ปิด"
+              style={{
+                position: 'absolute', top: '-2.5rem', right: 0,
+                background: '#fff', border: 'none', borderRadius: '50%',
+                width: '2.25rem', height: '2.25rem', fontSize: '1.3rem',
+                cursor: 'pointer', lineHeight: 1, color: '#111',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              }}
+            >
+              ×
+            </button>
+            <img
+              src={previewFile.url}
+              alt={previewFile.name}
+              style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '8px', display: 'block' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
